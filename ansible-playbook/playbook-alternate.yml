@@ -1,0 +1,221 @@
+---
+# This playbook deploys the whole application stack
+- hosts: prod 
+  sudo: yes
+  vars:
+    workdir: '/srv/app'
+    groupId: 'com.griddynamics.gridlibrary'
+    serviceArtifactId: 'grid-library-service'
+#    flywayArtifactId: 'grid-library-flyway'
+    configsArtifactId: 'grid-library-configs'
+    uiArtifactId: 'grid-library-ui'
+    version: '2.0.0-PRERELEASE'
+    repository_url: 'http://172.26.6.4:8081/service/local/artifact/maven/redirect'
+    repository: 'pre-releases'
+    download_url: http://download.oracle.com/otn-pub/java/jdk/8u5-b13/jdk-8u5-linux-x64.tar.gz
+    download_folder: /opt
+    java_name: "{{ download_folder }}/jdk1.8.0_05"
+    java_archive: "{{ download_folder }}/jdk-8u5-linux-x64.tar.gz"
+  tasks:
+    - name: Ensure nginx are installed
+      apt: name=nginx state=present update_cache=yes
+    
+    - name: Start nginx 
+      service: name=nginx state=started
+
+    - name: Create directory for images
+      file: path=/var/www/html/srv/app/images state=directory
+
+    - name: Download Java
+      sudo: yes
+      command: "wget -q -O {{ java_archive }} --no-check-certificate --no-cookies --header 'Cookie: oraclelicense=accept-securebackup-cookie' {{download_url}}" 
+      args:
+        creates: "{{ java_archive }}"
+
+    - name: Unpack archive
+      sudo: yes
+      command: "tar -zxf {{java_archive}} -C {{download_folder}}" 
+      args: 
+        creates: "{{ java_name }}"
+
+    - name: Fix ownership
+      sudo: yes
+      file: state=directory path={{java_name}} owner=root group=root recurse=yes
+
+    - name: Make Java available for system
+      sudo: yes
+      file: src=/opt/jdk1.8.0_05/bin/java dest=/usr/bin/java state=link
+
+    - name: Create necessary directories
+      sudo: yes
+      file: path={{ workdir }}/images state=directory
+
+    - name: Download service artifact
+      get_url: 
+        url: "{{ repository_url }}?\
+              r={{ repository }}&\
+              g={{ groupId }}&\
+              a={{ serviceArtifactId }}&\
+              v=LATEST&\
+              c=&\
+              e=jar"
+        dest: "{{ workdir }}/{{ serviceArtifactId }}.jar"
+
+#    - name: Download flyway artifact
+#      get_url:
+#        url: "{{ repository_url }}?\
+#              r={{ repository }}&\
+#              g={{ groupId }}&\
+#              a={{ flywayArtifactId }}&\
+#              v=LATEST&\
+#              c=flyway-bundle&\
+#              e=tar.gz"
+#        dest: "{{ workdir }}/{{ flywayArtifactId }}.tar.gz"
+
+#    - name: Download ui artifact
+#      get_url:
+#        url: "{{ repository_url }}?\
+#              r={{ repository }}&\
+#              g={{ groupId }}&\
+#              a={{ uiArtifactId }}&\
+#              v={{ version }}&\
+#              c=&\
+#              e=tar"
+#        dest: "{{ workdir }}/{{ uiArtifactId }}.tar"
+
+    - name: Download configs artifact
+      get_url:
+        url: "{{ repository_url }}?\
+              r={{ repository }}&\
+              g={{ groupId }}&\
+              a={{ configsArtifactId }}&\
+              v=LATEST&\
+              c=prod&\
+              e=zip"
+        dest: "{{ workdir }}/{{ configsArtifactId }}.zip"
+
+
+#    - name: Extract flyway bundle
+#      unarchive:
+#        src: "{{ workdir }}/grid-library-flyway.tar.gz"
+#        dest: "{{ workdir }}"
+#        copy: no
+
+    - name: Install unzip tool
+      sudo: yes
+      apt:
+        name: unzip
+        state: present
+
+#   - name: Unzip migrations
+#      command: "unzip {{ workdir }}/jars/grid-library-*.jar -d {{ workdir }}/sql/"
+#      args:
+#        creates: "{{ workdir }}/sql/PUBLIC"
+
+    - name: Fix issue
+      command: "echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' >> /etc/nsswitch.conf"
+
+#    - name: Extract UI
+#      unarchive:
+#        src: "{{ workdir }}/grid-library-ui.tar"
+#        dest: "{{ workdir }}"
+#        copy: no
+
+    - name: Unzip configs
+      unarchive:
+        src: "{{ workdir }}/{{ configsArtifactId }}.zip"
+        dest: "{{ workdir }}"
+        copy: no
+
+- hosts: prod 
+  sudo: yes
+  gather_facts: no
+  tasks:
+  - name: ensure packages are installed
+    apt: name={{item}}
+    with_items:
+        - postgresql
+        - libpq-dev
+        - python-psycopg2
+        - haveged
+  - name: ensure postgres is started
+    service: name=postgresql state=started
+
+
+- hosts: prod
+  sudo: yes
+  sudo_user: postgres
+  gather_facts: no
+
+  vars:
+    dbname: postgres
+    dbuser: postgres
+    dbpassword: pass
+
+  tasks:
+  - name: ensure database is created
+    postgresql_db: name={{dbname}}
+
+  - name: ensure user has access to database
+    postgresql_user: db={{dbname}} name={{dbuser}} password={{dbpassword}} priv=ALL
+
+#  - name: Apply flyway migrations
+#    sudo_user: root
+#    sudo: yes
+#    command: "/srv/app/flyway -initOnMigrate
+#                              -user=postgres
+#                              -password=pass
+#                              -url='jdbc:postgresql://127.0.0.1:5432/postgres'
+#                              -dbSchema=public
+#                              -X info migrate"
+
+#  - name: Mount images directories
+#    sudo_user: root
+#    sudo: yes
+#    command: "mount -B /srv/app/images /var/www/html/srv/app/images"
+
+#- hosts: prod
+#  sudo: yes
+#  tasks:
+#  - name: Run application
+#    command: nohup java -jar /srv/app/grid-library-service.jar --spring.config.location=file:/srv/app/application.properties &
+#    async: 200000000000000000000000
+ 
+  
+#  - name: Ensure nodejs are installed
+#    apt: name={{item}}
+#    with_items:
+#      - git
+#      - nodejs
+#      - nodejs-legacy 
+#
+#  - name: Ensure packages are installed
+#    apt: name={{item}}
+#    with_items:
+#      - build-essential
+#      - npm
+#
+#  - name: Install npm modules
+#    npm: global=yes name={{item}}
+#    with_items: 
+#      - bower
+#      - gulp
+#
+#  - name: Uninstall browser sync
+#    npm: name=browser-sync state=absent global=yes
+#
+#  - name: Npm install
+#    command: chdir=/srv/app "npm install"
+#
+#  - name: Bower install
+#    command: chdir=/srv/app "bower --allow-root install -g && \
+#                             gulp config --apiUrl=localhost apiPort=8080 \
+#                             imgUrl=172.26.6.12 imgPort=8003 && \
+#                             gulp inject && \
+#                             gulp styles && \
+#                             gulp dev" 
+#    async: 1222222222222222222222222222222222222222
+#    poll: 0
+
+
+
