@@ -1,0 +1,20 @@
+---
+# This playbook deploys the whole application stack in this site.
+
+- name: download consul  
+  hosts: docker 
+  remote_user: root
+
+  roles:
+    - consul
+
+- name: download consul with ui
+  hosts: consul
+  vars:
+    consul_is_ui: true
+    consul_is_server: true
+  remote_user: root
+
+  roles:
+    - consul
+

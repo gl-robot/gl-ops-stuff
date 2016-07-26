@@ -1,0 +1,16 @@
+---
+- name: Copy vim settings
+  copy: src=vimrc.local dest=/etc/vim/vimrc.local
+
+- name: Install packages
+  apt: name={{item}} state=present update_cache=yes
+  with_items:
+    - python-psycopg2
+    - haveged
+    - git
+    - curl
+    - wget
+    - unzip
+    - python-pip
+
+

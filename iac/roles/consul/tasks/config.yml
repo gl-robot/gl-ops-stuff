@@ -1,0 +1,10 @@
+---
+- name: consul config provisioning
+  template: >
+    src={{ consul_config_template }}
+    dest={{ consul_config_file }}
+    owner={{ consul_user }}
+    group={{ consul_group }}
+    mode=0755
+
+

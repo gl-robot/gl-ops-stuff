@@ -1,0 +1,10 @@
+[docker]
+gl-prod1
+gl-prod2
+gl-prodlike
+
+
+[consul]
+gl-lb
+gl-jenkins
+gl-storage

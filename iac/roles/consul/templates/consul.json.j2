@@ -1,0 +1,14 @@
+{
+{% if consul_is_ui == true %}
+  "ui_dir": "{{ consul_ui_dir }}"
+{% endif %}
+  "start_join": [{% for host in consul_servers | difference(ansible_all_ipv4_addresses) %}"{{host}}"{% if not loop.last %}, {% endif %}{% endfor %}],
+  "retry_join": [{% for host in consul_servers | difference(ansible_all_ipv4_addresses) %}"{{host}}"{% if not loop.last %}, {% endif %}{% endfor %}],
+  "retry_interval": "{{ consul_retry_interval }}",
+  "retry_max": {{ consul_retry_max }},
+  "data_dir": "{{ consul_data_dir }},
+  "node_name": "{{ consul_node_name }}",
+  "server": {{ "true" if consul_is_server else "false" }},
+  "client_addr": "0.0.0.0",
+  "datacenter": "glib"
+}
