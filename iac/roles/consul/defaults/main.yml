@@ -13,7 +13,7 @@ consul_ui_dir: "{{ consul_home }}/dist"
 
 consul_home: /opt/consul
 consul_config_dir: /etc/consul.d
-consul_config_file: /etc/consul.conf
+consul_config_file: /etc/consul.d/consul.json
 consul_config_template: "consul.json.j2"
 consul_log_file: /var/log/consul
 consul_data_dir: "{{ consul_home }}/data"
