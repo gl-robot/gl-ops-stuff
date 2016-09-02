@@ -8,7 +8,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import sessionmaker
 
-engine = create_engine('postgresql://postgres:pass@172.26.30.13:5432/postgres')
+engine = create_engine('postgresql://postgres:pass@localhost:5432/postgres')
 Base = declarative_base()
 
 class Location(Base):

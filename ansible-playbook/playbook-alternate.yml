@@ -10,7 +10,8 @@
     configsArtifactId: 'grid-library-configs'
     uiArtifactId: 'grid-library-ui'
     version: '2.0.0-PRERELEASE'
-    repository_url: 'http://172.26.6.4:8081/service/local/artifact/maven/redirect'
+#    repository_url: 'http://172.26.6.4:8081/service/local/artifact/maven/redirect'
+    repository_url: 'http://storage.gridlibrary.c4gd-orion.griddynamics.net:8081/service/local/artifact/maven/redirect'
     repository: 'pre-releases'
     download_url: http://download.oracle.com/otn-pub/java/jdk/8u5-b13/jdk-8u5-linux-x64.tar.gz
     download_folder: /opt
